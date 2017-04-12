@@ -1,0 +1,158 @@
+package main
+
+import (
+	"fmt"
+	"math"
+	"time"
+
+	"github.com/yubo/rrdlite"
+)
+
+var DataSourceTypes = struct {
+	Gauge    string
+	Counter  string
+	Absolute string
+	Derive   string
+}{
+	"GAUGE",
+	"COUNTER",
+	"ABSOLUTE",
+	"DERIVE",
+}
+
+var RRATypes = struct {
+	Average string
+	Min     string
+	Max     string
+	Last    string
+}{
+	"AVERAGE",
+	"MIN",
+	"MAX",
+	"LAST",
+}
+
+type DataSource struct {
+	Name  string
+	Type  string
+	Start time.Time
+	Step  uint
+	Max   int
+	Min   int
+}
+
+func main() {
+
+	//now := time.Now()
+	//start := now.Add(time.Duration(-24) * time.Hour)
+	start := time.Unix(1491912600, 0)
+	filename := "test.rrd"
+
+	ds := &DataSource{
+		Name:  "test",
+		Type:  DataSourceTypes.Gauge,
+		Start: start,
+		Step:  60,
+		Max:   1000,
+		Min:   0,
+	}
+	err := create(filename, ds)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+
+	var items []*Item
+	for i := 0; i < 720; i++ {
+		item := new(Item)
+		item.Value = float64(i)
+		item.Timestamp = start.Add(time.Duration(i+1) * time.Second).Unix()
+		item.DSType = DataSourceTypes.Gauge
+		items = append(items, item)
+	}
+
+	err = update(filename, items)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+
+	end := start.Add(time.Duration(720) * time.Second)
+	items1, err := fetch(filename, RRATypes.Average, start.Unix(), end.Unix(), 60)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	for idx, v := range items1 {
+		fmt.Println(idx, "->", v)
+	}
+
+	fmt.Println("ok")
+}
+
+func create(filename string, ds *DataSource) error {
+
+	c := rrdlite.NewCreator(filename, ds.Start, ds.Step)
+	c.DS(ds.Name, ds.Type, ds.Step*2, ds.Min, ds.Max)
+
+	// 设置各种归档策略
+	c.RRA(RRATypes.Average, 0.5, 1, 720)
+	c.RRA(RRATypes.Average, 0.5, 5, 576)
+
+	return c.Create(true)
+}
+
+type Item struct {
+	Value     float64
+	Timestamp int64
+	DSType    string
+}
+
+func update(filename string, items []*Item) error {
+	u := rrdlite.NewUpdater(filename)
+
+	for _, item := range items {
+		v := math.Abs(item.Value)
+		if v > 1e+300 || (v < 1e-300 && v > 0) {
+			continue
+		}
+		if item.DSType == DataSourceTypes.Derive || item.DSType == DataSourceTypes.Counter {
+			u.Cache(item.Timestamp, int(item.Value))
+		} else {
+			u.Cache(item.Timestamp, item.Value)
+		}
+	}
+
+	return u.Update()
+}
+
+func fetch(filename string, cf string, start, end int64, step int) ([]*Item, error) {
+	start_t := time.Unix(start, 0)
+	end_t := time.Unix(end, 0)
+	step_t := time.Duration(step) * time.Second
+
+	fetchRes, err := rrdlite.Fetch(filename, cf, start_t, end_t, step_t)
+	if err != nil {
+		return []*Item{}, err
+	}
+
+	defer fetchRes.FreeValues()
+
+	values := fetchRes.Values()
+	size := len(values)
+	ret := make([]*Item, size)
+
+	start_ts := fetchRes.Start.Unix()
+	step_s := fetchRes.Step.Seconds()
+
+	for i, val := range values {
+		ts := start_ts + int64(i+1)*int64(step_s)
+		d := &Item{
+			Timestamp: ts,
+			Value:     val,
+		}
+		ret[i] = d
+	}
+
+	return ret, nil
+}
