@@ -5,41 +5,9 @@ import (
 	"math"
 	"time"
 
+	"github.com/gunsluo/rrd"
 	"github.com/yubo/rrdlite"
 )
-
-var DataSourceTypes = struct {
-	Gauge    string
-	Counter  string
-	Absolute string
-	Derive   string
-}{
-	"GAUGE",
-	"COUNTER",
-	"ABSOLUTE",
-	"DERIVE",
-}
-
-var RRATypes = struct {
-	Average string
-	Min     string
-	Max     string
-	Last    string
-}{
-	"AVERAGE",
-	"MIN",
-	"MAX",
-	"LAST",
-}
-
-type DataSource struct {
-	Name  string
-	Type  string
-	Start time.Time
-	Step  uint
-	Max   int
-	Min   int
-}
 
 func main() {
 
@@ -48,9 +16,9 @@ func main() {
 	start := time.Unix(1491912600, 0)
 	filename := "test.rrd"
 
-	ds := &DataSource{
+	ds := &rrd.DataSource{
 		Name:  "test",
-		Type:  DataSourceTypes.Gauge,
+		Type:  rrd.DataSourceTypes.Gauge,
 		Start: start,
 		Step:  60,
 		Max:   1000,
@@ -63,11 +31,11 @@ func main() {
 	}
 
 	var items []*Item
-	for i := 0; i < 720; i++ {
+	for i := 1; i <= 720; i++ {
 		item := new(Item)
 		item.Value = float64(i)
-		item.Timestamp = start.Add(time.Duration(i+1) * time.Second).Unix()
-		item.DSType = DataSourceTypes.Gauge
+		item.Timestamp = start.Add(time.Duration(i*60) * time.Second).Unix()
+		item.DSType = rrd.DataSourceTypes.Gauge
 		items = append(items, item)
 	}
 
@@ -77,8 +45,8 @@ func main() {
 		panic(err)
 	}
 
-	end := start.Add(time.Duration(720) * time.Second)
-	items1, err := fetch(filename, RRATypes.Average, start.Unix(), end.Unix(), 60)
+	end := start.Add(time.Duration(720*60) * time.Second)
+	items1, err := fetch(filename, rrd.RRATypes.Average, start.Unix(), end.Unix(), 60)
 	if err != nil {
 		fmt.Println(err)
 		panic(err)
@@ -87,17 +55,26 @@ func main() {
 		fmt.Println(idx, "->", v)
 	}
 
+	items2, err := fetch(filename, rrd.RRATypes.Average, start.Unix(), end.Unix(), 60*5)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	for idx, v := range items2 {
+		fmt.Println(idx, "->", v)
+	}
+
 	fmt.Println("ok")
 }
 
-func create(filename string, ds *DataSource) error {
+func create(filename string, ds *rrd.DataSource) error {
 
 	c := rrdlite.NewCreator(filename, ds.Start, ds.Step)
 	c.DS(ds.Name, ds.Type, ds.Step*2, ds.Min, ds.Max)
 
 	// 设置各种归档策略
-	c.RRA(RRATypes.Average, 0.5, 1, 720)
-	c.RRA(RRATypes.Average, 0.5, 5, 576)
+	c.RRA(rrd.RRATypes.Average, 0.5, 1, 720)
+	c.RRA(rrd.RRATypes.Average, 0.5, 5, 576)
 
 	return c.Create(true)
 }
@@ -110,13 +87,14 @@ type Item struct {
 
 func update(filename string, items []*Item) error {
 	u := rrdlite.NewUpdater(filename)
+	//u.SetTemplate("g")
 
 	for _, item := range items {
 		v := math.Abs(item.Value)
 		if v > 1e+300 || (v < 1e-300 && v > 0) {
 			continue
 		}
-		if item.DSType == DataSourceTypes.Derive || item.DSType == DataSourceTypes.Counter {
+		if item.DSType == rrd.DataSourceTypes.Derive || item.DSType == rrd.DataSourceTypes.Counter {
 			u.Cache(item.Timestamp, int(item.Value))
 		} else {
 			u.Cache(item.Timestamp, item.Value)
