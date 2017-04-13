@@ -122,7 +122,7 @@ func (t *Tool) Write(ds, pk string, items []*Item) error {
 
 	u := rrdlite.NewUpdater(dbfile)
 	for _, item := range items {
-		v := math.Abs(item.Value)
+		v := math.Abs(float64(item.Value))
 		if v > 1e+300 || (v < 1e-300 && v > 0) {
 			continue
 		}
@@ -164,7 +164,7 @@ func (t *Tool) Fetch(rraType, ds, pk string, start, end time.Time, step int) (it
 		ts := startTsFromRes + int64(i)*int64(stepDtFromRes)
 		d := &Item{
 			Timestamp: ts,
-			Value:     val,
+			Value:     JsonFloat(val),
 		}
 		ret[i] = d
 	}

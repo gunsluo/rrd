@@ -24,3 +24,6 @@ _testmain.go
 *.prof
 *.swp
 example/rrd
+demo/serve/rrd
+demo/serve/serve
+demo/client/client

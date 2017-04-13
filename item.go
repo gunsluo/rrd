@@ -2,6 +2,6 @@ package rrd
 
 // Item rrd item data
 type Item struct {
-	Value     float64
-	Timestamp int64
+	Value     JsonFloat `json:"value"`
+	Timestamp int64     `json:"timestamp"`
 }
