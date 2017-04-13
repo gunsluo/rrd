@@ -1,6 +1,7 @@
 package rrd
 
-var DataSourceTypes = struct {
+// DSTypes data source type
+var DSTypes = struct {
 	Gauge    string
 	Counter  string
 	Absolute string
@@ -12,6 +13,7 @@ var DataSourceTypes = struct {
 	"DERIVE",
 }
 
+// RRATypes rra type
 var RRATypes = struct {
 	Average string
 	Min     string
