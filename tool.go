@@ -43,8 +43,16 @@ func (t *Tool) Cfg(cfg *Config) *Tool {
 		} else {
 			d.Heartbeat = d.Heartbeat
 		}
-		d.Min = ds.Min
-		d.Max = ds.Max
+		if ds.Min == "" {
+			d.Min = "U"
+		} else {
+			d.Min = ds.Min
+		}
+		if ds.Max == "" {
+			d.Max = "U"
+		} else {
+			d.Max = ds.Max
+		}
 
 		for _, rra := range ds.RRAS {
 			r := new(RRAConfig)

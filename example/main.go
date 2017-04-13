@@ -16,8 +16,8 @@ func main() {
 				Name: "test",
 				Type: rrd.DSTypes.Gauge,
 				Step: 60,
-				Min:  0,
-				Max:  1000,
+				Min:  "0",
+				Max:  "1000",
 				RRAS: []rrd.RRAConfig{
 					{
 						Type:  rrd.RRATypes.Average,

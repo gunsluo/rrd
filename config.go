@@ -12,8 +12,8 @@ type DSConfig struct {
 	Type      string
 	Step      uint
 	Heartbeat uint
-	Max       int
-	Min       int
+	Max       string
+	Min       string
 	RRAS      []RRAConfig
 }
 
