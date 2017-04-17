@@ -21,6 +21,11 @@ type ChartData struct {
 	Timestamp int64   `json:"timestamp"`
 }
 
+type ListResponse struct {
+	Total int         `json:"total"` //总数
+	Data  interface{} `json:"data"`  //
+}
+
 type Response struct {
 	Code int         `json:"code"`           //响应状态码
 	Msg  string      `json:"msg"`            //响应消息
@@ -57,7 +62,9 @@ func initRRD() {
 						Type:  rrd.RRATypes.Average,
 						Steps: 1,
 						Rows:  720,
-					}, {
+					},
+
+					{
 						Type:  rrd.RRATypes.Average,
 						Steps: 5,
 						Rows:  576,
@@ -141,5 +148,5 @@ func Chart(ctx *iris.Context) {
 		return
 	}
 
-	ctx.JSON(iris.StatusOK, &Response{Code: 200, Body: itemsRet})
+	ctx.JSON(iris.StatusOK, &Response{Code: 200, Body: &ListResponse{Total: len(itemsRet), Data: itemsRet}})
 }
