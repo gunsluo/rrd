@@ -38,7 +38,7 @@ func main() {
 	now := time.Now()
 	for i := 0; i < 720; i++ {
 		item := new(rrd.Item)
-		item.Value = float64(i)
+		item.Value = rrd.JSONFloat(i)
 		item.Timestamp = now.Add(time.Duration(i*60) * time.Second).Unix()
 		items = append(items, item)
 	}

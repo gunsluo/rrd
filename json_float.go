@@ -5,13 +5,15 @@ import (
 	"math"
 )
 
-type JsonFloat float64
+// JSONFloat float64 type json by rrd
+type JSONFloat float64
 
-func (v JsonFloat) MarshalJSON() ([]byte, error) {
+// MarshalJSON json marshalJson
+func (v JSONFloat) MarshalJSON() ([]byte, error) {
 	f := float64(v)
 	if math.IsNaN(f) || math.IsInf(f, 0) {
 		return []byte("null"), nil
-	} else {
-		return []byte(fmt.Sprintf("%f", f)), nil
 	}
+
+	return []byte(fmt.Sprintf("%f", f)), nil
 }

@@ -164,7 +164,7 @@ func (t *Tool) Fetch(rraType, ds, pk string, start, end time.Time, step int) (it
 		ts := startTsFromRes + int64(i)*int64(stepDtFromRes)
 		d := &Item{
 			Timestamp: ts,
-			Value:     JsonFloat(val),
+			Value:     JSONFloat(val),
 		}
 		ret[i] = d
 	}
