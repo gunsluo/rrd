@@ -99,7 +99,7 @@ func Push(ctx *iris.Context) {
 
 	items := []*rrd.Item{
 		&rrd.Item{
-			Value:     rrd.JsonFloat(d.Value),
+			Value:     rrd.JSONFloat(d.Value),
 			Timestamp: d.Timestamp,
 		},
 	}
